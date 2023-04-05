@@ -12,13 +12,16 @@ void *run_loop(void *ptr)
     for (int i = 0; i < 5; i++)
     {
         printf("%s: %i\n", *thread_name, i);
-        sleep(1);
+        sleep(1); // Sleep added to make thread switching more obvious
     }
     return NULL;
 }
 
 int main(void)
 {
+    // Print starting message
+    printf("Launching threads\n");
+
     // Define thread ids
     pthread_t id_1;
     pthread_t id_2;
