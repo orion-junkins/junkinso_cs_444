@@ -11,6 +11,9 @@ int transaction_count;
 
 int seat_taken_count = 0;
 
+pthread_mutex_t seat_taken_lock = PTHREAD_MUTEX_INITIALIZER;
+
+
 int reserve_seat(int n)
 {
     // Attempt to reserve seat number n
@@ -20,10 +23,17 @@ int reserve_seat(int n)
     //
     // This function should also increment seat_taken_count if the seat
     // wasn't already taken.
-    
-    // TODO
-
-    return 0;  // Change as necessary--included so it will build
+    int return_code = 0;
+    pthread_mutex_lock(&seat_taken_lock);
+    if (seat_taken[n] == 0)
+    {
+        seat_taken[n] = 1;
+        seat_taken_count += 1;
+    } else {
+        return_code = -1;
+    }
+    pthread_mutex_unlock(&seat_taken_lock);
+    return return_code;
 }
 
 int free_seat(int n)
@@ -35,18 +45,25 @@ int free_seat(int n)
     //
     // This function should also decrement seat_taken_count if the seat
     // wasn't already free.
-
-    // TODO
-
-    return 0;  // Change as necessary--included so it will build
+    int return_code = 0;
+    pthread_mutex_lock(&seat_taken_lock);
+    if (seat_taken[n] == 1)
+    {
+        seat_taken[n] = 0;
+        seat_taken_count -= 1;
+    } else {
+        return_code = -1;
+    }
+    pthread_mutex_unlock(&seat_taken_lock);
+    return return_code;
 }
 
 int is_free(int n) {
     // Returns true if the given seat is available.
-
-    // TODO
-
-    return 0;  // Change as necessary--included so it will build
+    pthread_mutex_lock(&seat_taken_lock);
+    int is_free = (seat_taken[n] == 0);
+    pthread_mutex_unlock(&seat_taken_lock);
+    return is_free;
 }
 
 int verify_seat_count(void) {
@@ -62,13 +79,17 @@ int verify_seat_count(void) {
 
     int count = 0;
 
+    pthread_mutex_lock(&seat_taken_lock);
+
     // Count all the taken seats
     for (int i = 0; i < seat_count; i++)
         if (seat_taken[i])
             count++;
 
     // Return true if it's the same as seat_taken_count
-    return count == seat_taken_count;
+    int valid_count = (count == seat_taken_count);
+    pthread_mutex_unlock(&seat_taken_lock);
+    return valid_count;
 }
 
 // ------------------- DO NOT MODIFY PAST THIS LINE -------------------
