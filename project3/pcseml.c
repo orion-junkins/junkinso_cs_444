@@ -42,6 +42,7 @@ void *producer (void *arg){
         sem_post(mutex);
         sem_post(items);
     }
+    printf("P%d: exiting\n", id);
     return NULL;
 }
 
