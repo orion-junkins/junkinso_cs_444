@@ -3,31 +3,77 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include <stdbool.h>
 #include "eventbuf.h" 
 #include "helpers.h"
 
+// Shared data buffer and needed semaphores
 struct eventbuf *eb;
-sem_t *sem_producer;
-sem_t *sem_consumer;
+sem_t *mutex;
+sem_t *items;
+sem_t *spaces;
 
+// Flag to indicate that there are no more events
+bool done = false;
+
+// Command line arguments
 int num_producers;
 int num_consumers;
 int events_per_producer;
 int max_outstanding;
 
 void *producer (void *arg){
+    /*
+    * Producer thread function
+    */
+    // Get producer id
     int id = *((int *) arg);
-    printf("P%d: starting\n", id);
+
+    // Generate events
+    for (int i = 0; i < events_per_producer; i++) {
+        // Calculate event number
+        int event_number = id * 100 + i;
+        printf("P%d: adding event %d\n", id, event_number);
+        
+        // Add event to buffer
+        sem_wait(spaces);
+        sem_wait(mutex);
+        eventbuf_add(eb, event_number);
+        sem_post(mutex);
+        sem_post(items);
+    }
     return NULL;
 }
 
 void *consumer (void *arg){
+    /*
+    * Consumer thread function
+    */
+    // Get consumer id
     int id = *((int *) arg);
-    printf("C%d: starting\n", id);
+
+    // Consume events
+    while(!done) {
+        // Get event from buffer
+        sem_wait(items);
+        sem_wait(mutex);
+        if (eventbuf_empty(eb)) {
+            // No more events, set done flag
+            sem_post(mutex);
+            sem_post(items);
+            done = true;
+        }
+        int event = eventbuf_get(eb);
+        sem_post(mutex);
+        sem_post(spaces);
+
+        // Print event
+        printf("C%d: got event %d\n", id, event);
+    }
+    printf("C%d: exiting\n", id);
+
     return NULL;
 }
-
-
 
 int main(int argc, char *argv[]) {
     // Parse command line arguments
@@ -42,9 +88,9 @@ int main(int argc, char *argv[]) {
 
     // Initialize shared data buffer and needed semaphores
     eb = eventbuf_create();
-    sem_producer = sem_open_temp("producer_sem", 1);
-    sem_consumer = sem_open_temp("consumer_sem", 1);
-
+    mutex = sem_open_temp("mutex_sem", 1);
+    items = sem_open_temp("items_sem", 0);
+    spaces = sem_open_temp("spaces_sem", max_outstanding);
 
     // Create Producers
     pthread_t producers[num_producers];
@@ -67,14 +113,15 @@ int main(int argc, char *argv[]) {
         pthread_join(producers[i], NULL);
     }
 
-    // Notify Consumers that there are no more events
-    
+    // Wake up consumers so they will exit
+    sem_post(items);
 
     // Wait for Consumers
     for (int i = 0; i < num_consumers; i++) {
         pthread_join(consumers[i], NULL);
     }
 
+    // Cleanup
     eventbuf_free(eb);
 
     return 0;
