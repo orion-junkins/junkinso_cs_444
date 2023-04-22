@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <stdbool.h>
-#include "eventbuf.h" 
+#include "eventbuf.h"
 #include "helpers.h"
 
 // Shared data buffer and needed semaphores
@@ -22,19 +22,21 @@ int num_consumers;
 int events_per_producer;
 int max_outstanding;
 
-void *producer (void *arg){
+void *producer(void *arg)
+{
     /*
-    * Producer thread function
-    */
+     * Producer thread function
+     */
     // Get producer id
-    int id = *((int *) arg);
+    int id = *((int *)arg);
 
     // Generate events
-    for (int i = 0; i < events_per_producer; i++) {
+    for (int i = 0; i < events_per_producer; i++)
+    {
         // Calculate event number
         int event_number = id * 100 + i;
         printf("P%d: adding event %d\n", id, event_number);
-        
+
         // Add event to buffer
         sem_wait(spaces);
         sem_wait(mutex);
@@ -46,19 +48,22 @@ void *producer (void *arg){
     return NULL;
 }
 
-void *consumer (void *arg){
+void *consumer(void *arg)
+{
     /*
-    * Consumer thread function
-    */
+     * Consumer thread function
+     */
     // Get consumer id
-    int id = *((int *) arg);
+    int id = *((int *)arg);
 
     // Consume events
-    while(!done) {
+    while (!done)
+    {
         // Get event from buffer
         sem_wait(items);
         sem_wait(mutex);
-        if (eventbuf_empty(eb)) {
+        if (eventbuf_empty(eb))
+        {
             // No more events, set done flag
             sem_post(mutex);
             sem_post(items);
@@ -76,9 +81,11 @@ void *consumer (void *arg){
     return NULL;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     // Parse command line arguments
-    if (argc != 5) {
+    if (argc != 5)
+    {
         printf("Usage: %s <num_producers> <num_consumers> <events_per_producer> <max_outstanding>\n", argv[0]);
         return 1;
     }
@@ -96,7 +103,8 @@ int main(int argc, char *argv[]) {
     // Create Producers
     pthread_t producers[num_producers];
     int producer_ids[num_producers];
-    for (int i = 0; i < num_producers; i++) {
+    for (int i = 0; i < num_producers; i++)
+    {
         producer_ids[i] = i;
         pthread_create(&producers[i], NULL, producer, &producer_ids[i]);
     }
@@ -104,13 +112,15 @@ int main(int argc, char *argv[]) {
     // Create Consumers
     pthread_t consumers[num_consumers];
     int consumer_ids[num_consumers];
-    for (int i = 0; i < num_consumers; i++) {
+    for (int i = 0; i < num_consumers; i++)
+    {
         consumer_ids[i] = i;
         pthread_create(&consumers[i], NULL, consumer, &consumer_ids[i]);
     }
 
     // Wait for Producers
-    for (int i = 0; i < num_producers; i++) {
+    for (int i = 0; i < num_producers; i++)
+    {
         pthread_join(producers[i], NULL);
     }
 
@@ -118,7 +128,8 @@ int main(int argc, char *argv[]) {
     sem_post(items);
 
     // Wait for Consumers
-    for (int i = 0; i < num_consumers; i++) {
+    for (int i = 0; i < num_consumers; i++)
+    {
         pthread_join(consumers[i], NULL);
     }
 
