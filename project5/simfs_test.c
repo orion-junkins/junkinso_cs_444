@@ -5,7 +5,8 @@
 
 #include "ctest.h"
 #include "image.h"
-#include "block.c"
+#include "block.h"
+#include "free.h"
 
 void test_file_creation(void)
 {
@@ -44,12 +45,27 @@ void test_bread_and_bwrite(void)
     image_close();
 }
 
+void test_set_and_find_free(void){
+    unsigned char *testing_block = malloc(BLOCK_SIZE);
+    set_free(testing_block, 0, 1);
+    set_free(testing_block, 1, 1);
+    set_free(testing_block, 2, 1);
+    set_free(testing_block, 4, 1);
+    set_free(testing_block, 5, 1);
+
+    CTEST_ASSERT(find_free(testing_block) == 3, "testing set_free and find_free");
+    set_free(testing_block, 3, 1);
+    set_free(testing_block, 4, 0);
+
+    CTEST_ASSERT(find_free(testing_block) == 4, "testing set_free and find_free");
+}
 int main(void)
 {
     CTEST_VERBOSE(1);
 
     test_file_creation();
     test_bread_and_bwrite();
+    test_set_and_find_free();
 
     CTEST_RESULTS();
 
