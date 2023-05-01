@@ -3,7 +3,7 @@
 
 #include "block.h"
 #include "image.h"
-#define BLOCK_SIZE 4096
+
 unsigned char *bread(int block_num, unsigned char *block)
 {
     /*
