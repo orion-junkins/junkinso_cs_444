@@ -23,20 +23,20 @@ void test_bread_and_bwrite(void)
     {
         block_a_to_write[i] = 'a';
     }
-    bwrite(1, block_a_to_write);
+    bwrite(7, block_a_to_write);
 
     unsigned char *block_b_to_write = malloc(BLOCK_SIZE);
     for (int i = 0; i < BLOCK_SIZE; i++)
     {
         block_b_to_write[i] = 'b';
     }
-    bwrite(2, block_b_to_write);
+    bwrite(8, block_b_to_write);
 
     unsigned char *block_a_to_read = malloc(BLOCK_SIZE);
-    bread(1, block_a_to_read);
+    bread(7, block_a_to_read);
 
     unsigned char *block_b_to_read = malloc(BLOCK_SIZE);
-    bread(2, block_b_to_read);
+    bread(8, block_b_to_read);
 
     CTEST_ASSERT(memcmp(block_a_to_read, block_a_to_write, BLOCK_SIZE) == 0, "testing bread and bwrite");
     CTEST_ASSERT(memcmp(block_b_to_read, block_b_to_write, BLOCK_SIZE) == 0, "testing bread and bwrite");
