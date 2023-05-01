@@ -7,6 +7,7 @@
 #include "image.h"
 #include "block.h"
 #include "free.h"
+#include "inode.h"
 
 void test_file_creation(void)
 {
@@ -45,7 +46,8 @@ void test_bread_and_bwrite(void)
     image_close();
 }
 
-void test_set_and_find_free(void){
+void test_set_and_find_free(void)
+{
     unsigned char *testing_block = malloc(BLOCK_SIZE);
     set_free(testing_block, 0, 1);
     set_free(testing_block, 1, 1);
@@ -59,6 +61,40 @@ void test_set_and_find_free(void){
 
     CTEST_ASSERT(find_free(testing_block) == 4, "testing set_free and find_free");
 }
+
+void test_ialloc(void)
+{
+    image_open("image", 1);
+    unsigned char *testing_block = malloc(BLOCK_SIZE);
+    for (int i = 0; i < BLOCK_SIZE; i++)
+    {
+        set_free(testing_block, i, 0);
+    }
+    bwrite(1, testing_block);
+
+    int inode_0_num = ialloc();
+    CTEST_ASSERT(inode_0_num == 0, "testing ialloc");
+    int inode_1_num = ialloc();
+    CTEST_ASSERT(inode_1_num == 1, "testing ialloc");
+    image_close();
+}
+
+void test_alloc(void)
+{
+    image_open("image", 2);
+    unsigned char *testing_block = malloc(BLOCK_SIZE);
+    for (int i = 0; i < BLOCK_SIZE; i++)
+    {
+        set_free(testing_block, i, 0);
+    }
+    bwrite(1, testing_block);
+
+    int inode_0_num = alloc();
+    CTEST_ASSERT(inode_0_num == 0, "testing ialloc");
+    int inode_1_num = alloc();
+    CTEST_ASSERT(inode_1_num == 1, "testing ialloc");
+    image_close();
+}
 int main(void)
 {
     CTEST_VERBOSE(1);
@@ -66,6 +102,8 @@ int main(void)
     test_file_creation();
     test_bread_and_bwrite();
     test_set_and_find_free();
+    test_ialloc();
+    test_alloc();
 
     CTEST_RESULTS();
 

@@ -3,6 +3,7 @@
 
 #include "block.h"
 #include "image.h"
+#include "free.h"
 
 unsigned char *bread(int block_num, unsigned char *block)
 {
@@ -24,5 +25,15 @@ void bwrite(int block_num, unsigned char *block)
     write(image_fd, block, BLOCK_SIZE);
 }
 
-int alloc(void);
-/*allocate a previous-free data block from the block map.*/
+int alloc(void)
+{
+    /*allocate a previous-free data block from the block map.*/
+    unsigned char *data_map = bread(2, data_map);
+    int free_data = find_free(data_map);
+    if (free_data == -1){
+        return -1;
+    }
+    set_free(data_map, free_data, 1);
+    bwrite(1, data_map);
+    return free_data;
+}
