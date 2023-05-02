@@ -17,6 +17,7 @@ int ialloc(void){
     }
     set_free(inode_map, free_inode, 1);
     bwrite(FREE_INODE_MAP_NUM, inode_map);
+    free(inode_map);
 
     return free_inode;
 }

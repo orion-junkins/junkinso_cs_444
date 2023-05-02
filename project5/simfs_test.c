@@ -12,7 +12,7 @@
 
 void test_file_creation(void)
 {
-    image_open("image", 0);
+    image_open("image", 1);
     CTEST_ASSERT(image_fd != -1, "testing file is open");
     image_close();
     CTEST_ASSERT(access("image", F_OK) == 0, "testing file creation");
@@ -45,6 +45,11 @@ void test_bread_and_bwrite(void)
     CTEST_ASSERT(memcmp(block_a_to_read, block_a_to_write, BLOCK_SIZE) == 0, "testing bread and bwrite");
     CTEST_ASSERT(memcmp(block_b_to_read, block_b_to_write, BLOCK_SIZE) == 0, "testing bread and bwrite");
     CTEST_ASSERT(memcmp(block_a_to_read, block_b_to_write, BLOCK_SIZE) != 0, "testing bread and bwrite");
+
+    free(block_a_to_write);
+    free(block_b_to_write);
+    free(block_a_to_read);
+    free(block_b_to_read);
     image_close();
 }
 
@@ -62,6 +67,7 @@ void test_set_and_find_free(void)
     set_free(testing_block, 4, 0);
 
     CTEST_ASSERT(find_free(testing_block) == 4, "testing set_free and find_free");
+    free(testing_block);
 }
 
 void test_ialloc(void)
@@ -79,12 +85,14 @@ void test_ialloc(void)
     CTEST_ASSERT(inode_0_num == 0, "testing ialloc");
     int inode_1_num = ialloc();
     CTEST_ASSERT(inode_1_num == 1, "testing ialloc");
+    
+    free(testing_block);
     image_close();
 }
 
 void test_alloc(void)
 {
-    image_open("image", 2);
+    image_open("image", 1);
 
     unsigned char *testing_block = malloc(BLOCK_SIZE);
     for (int i = 0; i < BLOCK_SIZE; i++)
@@ -97,6 +105,8 @@ void test_alloc(void)
     CTEST_ASSERT(inode_0_num == 0, "testing ialloc");
     int inode_1_num = alloc();
     CTEST_ASSERT(inode_1_num == 1, "testing ialloc");
+
+    free(testing_block);
     image_close();
 }
 
@@ -105,16 +115,16 @@ void test_mkfs(void)
     image_open("image", 1);
     mkfs();
 
+    unsigned char *testing_block = malloc(BLOCK_SIZE);
     for (int i = 0; i < 7; i++){
-        unsigned char *testing_block = malloc(BLOCK_SIZE);
         testing_block = bread(i, testing_block);
-        if (i == 2){
+        if (i == FREE_BLOCK_MAP_NUM){
             // 0-6 7 should be set to 1 in the data block
             CTEST_ASSERT(find_free(testing_block) == 7, "testing set_free and find_free");
         } else {
         CTEST_ASSERT(find_free(testing_block) == 0, "testing set_free and find_free");
         }
-    }  
+    }
 
     unsigned char *expected_empty_block = malloc(BLOCK_SIZE);
     for (int i = 0; i < BLOCK_SIZE; i++){
@@ -131,6 +141,10 @@ void test_mkfs(void)
     }
 
     CTEST_ASSERT(all_match == 1, "testing all blocks are inode and file data empty");
+    
+    free(testing_block);
+    free(expected_empty_block);
+    free(current_block);
     image_close();
 }
 

@@ -40,5 +40,7 @@ int alloc(void)
     }
     set_free(data_map, free_data, 1);
     bwrite(FREE_BLOCK_MAP_NUM, data_map);
+    free(data_map);
+
     return free_data;
 }
