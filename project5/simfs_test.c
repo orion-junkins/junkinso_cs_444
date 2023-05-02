@@ -115,11 +115,16 @@ void test_mkfs(void)
     for (int i = 0; i < BLOCK_SIZE; i++){
         expected_empty_block[i] = 0;
     }
-    for (int i = 7; i < 1024; i++){
-        unsigned char *current_block = malloc(BLOCK_SIZE);
+    
+    unsigned char *current_block = malloc(BLOCK_SIZE);
+    int all_match = 1;
+    for (int i = 3; i < 5024; i++){
         current_block = bread(i, current_block);
-        CTEST_ASSERT(memcmp(expected_empty_block, current_block, BLOCK_SIZE) == 0, "testing all blocks are empty");
+        if(memcmp(expected_empty_block, current_block, BLOCK_SIZE) != 0){
+            all_match = 0;
+        }
     }
+    CTEST_ASSERT(all_match == 1, "testing all blocks are inode and file data empty");
     image_close();
 }
 int main(void)
