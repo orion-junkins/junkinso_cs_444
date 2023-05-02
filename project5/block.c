@@ -34,6 +34,6 @@ int alloc(void)
         return -1;
     }
     set_free(data_map, free_data, 1);
-    bwrite(1, data_map);
+    bwrite(2, data_map);
     return free_data;
 }

@@ -1,5 +1,5 @@
-#include "free.h";
-#include "block.h";
+#include "free.h"
+#include "block.h"
 
 int ialloc(void){
     /*

@@ -8,6 +8,7 @@
 #include "block.h"
 #include "free.h"
 #include "inode.h"
+#include "mkfs.h"
 
 void test_file_creation(void)
 {
@@ -95,6 +96,32 @@ void test_alloc(void)
     CTEST_ASSERT(inode_1_num == 1, "testing ialloc");
     image_close();
 }
+
+void test_mkfs(void)
+{
+    image_open("image", 1);
+    mkfs();
+    for (int i = 0; i < 7; i++){
+        unsigned char *testing_block = malloc(BLOCK_SIZE);
+        testing_block = bread(i, testing_block);
+        if (i == 2){
+            // 0-6 7 should be set to 1 in the data block
+            CTEST_ASSERT(find_free(testing_block) == 7, "testing set_free and find_free");
+        } else {
+        CTEST_ASSERT(find_free(testing_block) == 0, "testing set_free and find_free");
+        }
+    }    
+    unsigned char *expected_empty_block = malloc(BLOCK_SIZE);
+    for (int i = 0; i < BLOCK_SIZE; i++){
+        expected_empty_block[i] = 0;
+    }
+    for (int i = 7; i < 1024; i++){
+        unsigned char *current_block = malloc(BLOCK_SIZE);
+        current_block = bread(i, current_block);
+        CTEST_ASSERT(memcmp(expected_empty_block, current_block, BLOCK_SIZE) == 0, "testing all blocks are empty");
+    }
+    image_close();
+}
 int main(void)
 {
     CTEST_VERBOSE(1);
@@ -104,6 +131,7 @@ int main(void)
     test_set_and_find_free();
     test_ialloc();
     test_alloc();
+    test_mkfs();
 
     CTEST_RESULTS();
 
