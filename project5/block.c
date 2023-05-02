@@ -35,7 +35,8 @@ int alloc(void)
     unsigned char *data_map = malloc(BLOCK_SIZE);
     data_map = bread(FREE_BLOCK_MAP_NUM, data_map);
     int free_data = find_free(data_map);
-    if (free_data == -1){
+    if (free_data == -1)
+    {
         return -1;
     }
     set_free(data_map, free_data, 1);
