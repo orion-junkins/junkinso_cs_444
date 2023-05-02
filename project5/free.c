@@ -4,7 +4,7 @@
 void set_free(unsigned char *block, int num, int set)
 {
     /*
-    * set the bit in the block to 1 or 0
+    Set the bit at the given number in the block to 1 or 0
     */
     int byte_num = num / 8;  // 8 bits per byte
     int bit_num = num % 8;
@@ -22,9 +22,9 @@ void set_free(unsigned char *block, int num, int set)
 int find_low_clear_bit(unsigned char x)
 {
     /* 
-    * find the lowest clear bit in a byte
-    * return -1 if all bits are set
-    * return the bit number if there is a clear bit
+	Find the lowest clear bit in a byte
+	Return -1 if all bits are set
+	Return the bit number if there is a clear bit
     */
     for (int i = 0; i < 8; i++)
         if (!(x & (1 << i)))
@@ -36,16 +36,15 @@ int find_low_clear_bit(unsigned char x)
 int find_free(unsigned char *block)
 {
     /*
-    * find the lowest clear bit in a block
-    * return -1 if all bits are set
-    * return the bit number if there is a clear bit
+	Find the lowest clear bit in a block
+	Return -1 if all bits are set
+	Return the bit number if there is a clear bit
     */
     for (int i = 0; i < BLOCK_SIZE; i++){
         int low_clear_bit = find_low_clear_bit(block[i]);
         if (low_clear_bit != -1){
             return i * 8 + low_clear_bit;
-        } else {
-            return -1;
         }
     }
+	return -1;
 }

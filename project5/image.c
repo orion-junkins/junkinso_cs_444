@@ -6,10 +6,9 @@
 int image_fd;
 
 int image_open(char *filename, int truncate){
-// 
-/* 
-Open the image file of the given name, creating it if it doesn't exist, and truncating it to 0 size if truncate is true (see below).
-*/
+    /* 
+    Open the image file of the given name, creating it if it doesn't exist, and truncating it to 0 size if truncate is true (see below).
+    */
     int flags = O_RDWR | O_CREAT;
     if(truncate){
         flags |= O_TRUNC;
@@ -22,6 +21,6 @@ Open the image file of the given name, creating it if it doesn't exist, and trun
 }
 
 int image_close(){
-    // This closes the image file.
+    // Close the image file.
     return close(image_fd);
 }

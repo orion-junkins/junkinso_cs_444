@@ -3,7 +3,7 @@
 
 int ialloc(void){
     /*
-    allocate a previously-free inode in the inode map.
+    Allocate a previously-free inode in the inode map.
     */
     unsigned char *inode_map = bread(1, inode_map);
     int free_inode = find_free(inode_map);
@@ -12,5 +12,6 @@ int ialloc(void){
     }
     set_free(inode_map, free_inode, 1);
     bwrite(1, inode_map);
+    
     return free_inode;
 }
