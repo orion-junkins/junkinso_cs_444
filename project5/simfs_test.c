@@ -21,6 +21,7 @@ void test_file_creation(void)
 void test_bread_and_bwrite(void)
 {
     image_open("image", 1);
+
     unsigned char *block_a_to_write = malloc(BLOCK_SIZE);
     for (int i = 0; i < BLOCK_SIZE; i++)
     {
@@ -66,6 +67,7 @@ void test_set_and_find_free(void)
 void test_ialloc(void)
 {
     image_open("image", 1);
+
     unsigned char *testing_block = malloc(BLOCK_SIZE);
     for (int i = 0; i < BLOCK_SIZE; i++)
     {
@@ -83,6 +85,7 @@ void test_ialloc(void)
 void test_alloc(void)
 {
     image_open("image", 2);
+
     unsigned char *testing_block = malloc(BLOCK_SIZE);
     for (int i = 0; i < BLOCK_SIZE; i++)
     {
@@ -101,6 +104,7 @@ void test_mkfs(void)
 {
     image_open("image", 1);
     mkfs();
+
     for (int i = 0; i < 7; i++){
         unsigned char *testing_block = malloc(BLOCK_SIZE);
         testing_block = bread(i, testing_block);
@@ -110,7 +114,8 @@ void test_mkfs(void)
         } else {
         CTEST_ASSERT(find_free(testing_block) == 0, "testing set_free and find_free");
         }
-    }    
+    }  
+
     unsigned char *expected_empty_block = malloc(BLOCK_SIZE);
     for (int i = 0; i < BLOCK_SIZE; i++){
         expected_empty_block[i] = 0;
@@ -124,9 +129,11 @@ void test_mkfs(void)
             all_match = 0;
         }
     }
+
     CTEST_ASSERT(all_match == 1, "testing all blocks are inode and file data empty");
     image_close();
 }
+
 int main(void)
 {
     CTEST_VERBOSE(1);
