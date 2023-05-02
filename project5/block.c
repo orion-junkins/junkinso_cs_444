@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "block.h"
@@ -31,12 +32,13 @@ int alloc(void)
     /*
     Allocate a previous-free data block from the block map.
     */
-    unsigned char *data_map = bread(2, data_map);
+    unsigned char *data_map = malloc(BLOCK_SIZE);
+    data_map = bread(FREE_BLOCK_MAP_NUM, data_map);
     int free_data = find_free(data_map);
     if (free_data == -1){
         return -1;
     }
     set_free(data_map, free_data, 1);
-    bwrite(2, data_map);
+    bwrite(FREE_BLOCK_MAP_NUM, data_map);
     return free_data;
 }
