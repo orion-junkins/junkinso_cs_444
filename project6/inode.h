@@ -18,4 +18,8 @@ struct inode {
 };
 int ialloc(void);
 
+struct inode * find_incore_free(void);
+
+struct inode *find_incore(unsigned int inode_num);
+
 #endif

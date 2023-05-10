@@ -155,6 +155,25 @@ void test_mkfs(void)
     image_close();
 }
 
+void test_incore_inodes(void)
+{
+    // Find a free inode in the incore inode table
+    struct inode * original_node = find_incore_free();
+
+    // Modify it to set some values
+    original_node->inode_num = 27;
+    original_node->ref_count = 1;
+    original_node->owner_id = 1;
+
+    // Search for that by number
+    struct inode * new_node = find_incore(27);
+    
+    // Verify that the new node has the same data as the original node.
+    CTEST_ASSERT(new_node->inode_num == original_node->inode_num, "testing incore inodes");
+    CTEST_ASSERT(new_node->owner_id == original_node->owner_id, "testing incore inodes");
+
+}
+
 int main(void)
 {
     CTEST_VERBOSE(1);
@@ -165,6 +184,7 @@ int main(void)
     test_ialloc();
     test_alloc();
     test_mkfs();
+    test_incore_inodes();
 
     CTEST_RESULTS();
 
