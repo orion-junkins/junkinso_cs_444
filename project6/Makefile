@@ -4,7 +4,7 @@ simfs_test: simfs_test.o simfs.a
 simfs_test.o: simfs_test.c
 	gcc -Wall -Wextra -c -DCTEST_ENABLE $<
 
-simfs.a: block.o free.o image.o inode.o mkfs.o
+simfs.a: block.o free.o image.o inode.o pack.o mkfs.o
 	ar rcs $@ $^
 
 block.o: block.c
@@ -17,6 +17,9 @@ image.o: image.c
 	gcc -Wall -Wextra -c $<
 
 inode.o: inode.c
+	gcc -Wall -Wextra -c $<
+
+pack.o: pack.c
 	gcc -Wall -Wextra -c $<
 
 mkfs.o: mkfs.c
