@@ -80,9 +80,6 @@ void read_inode(struct inode *in, int inode_num){
         int cur_block_offset = 9 + i * INODE_PTR_SIZE;
         in->block_ptr[i] = read_u16(inode_block + block_offset_bytes + cur_block_offset);
     }
-    in->ref_count = 0;
-    in->inode_num = inode_num;
-
 
     free(inode_block);
 } 
@@ -116,3 +113,41 @@ void write_inode(struct inode *in) {
     free(inode_block);
 
 } 
+
+struct inode *iget(int inode_num){
+    /*
+    Return a pointer to an in-core inode for the given inode number, or NULL on failure.
+    */
+    struct inode *in = find_incore(inode_num);
+    if (in != NULL)
+    {
+        in->ref_count++;
+        return in;
+    }
+    else
+    {
+        in = find_incore_free();
+        if (in == NULL)
+        {
+            return NULL;
+        }
+        read_inode(in, inode_num);
+        in->ref_count++;
+        in->inode_num = inode_num;
+        return in;
+    }
+}
+
+
+void iput(struct inode *in) {
+    /*
+    Decrement the reference count on the inode. If it falls to 0, write the inode to disk.
+    */
+   if (in->ref_count == 0){
+        return;
+   }
+   in->ref_count--;
+   if (in->ref_count == 0){
+       write_inode(in);
+   }
+}

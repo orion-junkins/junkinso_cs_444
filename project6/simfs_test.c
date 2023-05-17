@@ -182,10 +182,8 @@ void test_inode_read_and_write(void)
     node->flags = 1;
     node->link_count = 1;
     node->block_ptr[0] = 1;
-    node->block_ptr[1] = 1;
-    node->ref_count = 1;
-    node->inode_num = 1;
-    
+    node->block_ptr[1] = 1;   
+    node->inode_num = 1; 
     write_inode(node);
 
     struct inode *new_node = malloc(sizeof(struct inode));
@@ -198,8 +196,33 @@ void test_inode_read_and_write(void)
     CTEST_ASSERT(new_node->link_count == node->link_count, "testing inode read and write");
     CTEST_ASSERT(new_node->block_ptr[0] == node->block_ptr[0], "testing inode read and write");
     CTEST_ASSERT(new_node->block_ptr[1] == node->block_ptr[1], "testing inode read and write");
-    CTEST_ASSERT(new_node->inode_num == node->inode_num, "testing inode read and write");
 }
+
+void test_inode_get_and_put(void) {
+    struct inode *node = malloc(sizeof(struct inode));
+    node->size = 1;
+    node->owner_id = 1;
+    node->permissions = 1;
+    node->flags = 1;
+    node->link_count = 1;
+    node->block_ptr[0] = 1;
+    node->block_ptr[1] = 1;   
+    node->inode_num = 1; 
+    node->ref_count = 1;
+    iput(node);
+
+    struct inode *new_node = malloc(sizeof(struct inode));
+    new_node = iget(1);
+    CTEST_ASSERT(new_node->size == node->size, "testing inode put and get");
+    CTEST_ASSERT(new_node->owner_id == node->owner_id, "testing inode put and get");
+    CTEST_ASSERT(new_node->permissions == node->permissions, "testing inode put and get");
+    CTEST_ASSERT(new_node->flags == node->flags, "testing inode put and get");
+    CTEST_ASSERT(new_node->link_count == node->link_count, "testing inode put and get");
+    CTEST_ASSERT(new_node->block_ptr[0] == node->block_ptr[0], "testing inode put and get");
+    CTEST_ASSERT(new_node->block_ptr[1] == node->block_ptr[1], "testing inode put and get");
+    
+}
+
 int main(void)
 {
     CTEST_VERBOSE(1);
@@ -212,6 +235,8 @@ int main(void)
     test_mkfs();
     test_incore_inodes();
     test_inode_read_and_write();
+    test_inode_get_and_put();
+
     CTEST_RESULTS();
 
     CTEST_EXIT();
