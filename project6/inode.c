@@ -7,7 +7,7 @@
 #include "pack.h"
 static struct inode incore[MAX_SYS_OPEN_FILES] = {0};
 
-int ialloc(void)
+struct inode* ialloc(void)
 {
     /*
     Allocate a previously-free inode in the inode map.
@@ -17,13 +17,23 @@ int ialloc(void)
     int free_inode = find_free(inode_map);
     if (free_inode == -1)
     {
-        return -1;
+        return NULL;
     }
     set_free(inode_map, free_inode, 1);
     bwrite(FREE_INODE_MAP_NUM, inode_map);
+    struct inode* new_node = iget(free_inode);
+    new_node->size = 0;
+    new_node->owner_id = 0;
+    new_node->permissions = 0;
+    new_node->flags = 0;
+    for (int i=0; i < INODE_PTR_COUNT; i++){
+        new_node->block_ptr[i] = 0;
+    }
+    write_inode(new_node);
+
     free(inode_map);
 
-    return free_inode;
+    return new_node;
 }
 
 

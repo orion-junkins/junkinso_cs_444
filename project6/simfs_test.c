@@ -73,20 +73,16 @@ void test_set_and_find_free(void)
 void test_ialloc(void)
 {
     image_open("image", 1);
+    struct inode* node_0 = ialloc();
+    CTEST_ASSERT(node_0->size == 0, "test ialloc");
+    CTEST_ASSERT(node_0->owner_id == 0, "test ialloc");
+    CTEST_ASSERT(node_0->permissions == 0, "test ialloc");
+    CTEST_ASSERT(node_0->flags == 0, "test ialloc");
 
-    unsigned char *testing_block = malloc(BLOCK_SIZE);
-    for (int i = 0; i < BLOCK_SIZE; i++)
-    {
-        set_free(testing_block, i, 0);
-    }
-    bwrite(1, testing_block);
+    struct inode* node_1 = ialloc();
 
-    int inode_0_num = ialloc();
-    CTEST_ASSERT(inode_0_num == 0, "testing ialloc");
-    int inode_1_num = ialloc();
-    CTEST_ASSERT(inode_1_num == 1, "testing ialloc");
-
-    free(testing_block);
+    CTEST_ASSERT(node_1->inode_num != node_0->inode_num, "test ialloc");
+    
     image_close();
 }
 
@@ -185,6 +181,7 @@ void test_inode_read_and_write(void)
     node->block_ptr[1] = 1;   
     node->inode_num = 1; 
     write_inode(node);
+    free(node);
 
     struct inode *new_node = malloc(sizeof(struct inode));
     read_inode(new_node, 1);
@@ -196,6 +193,7 @@ void test_inode_read_and_write(void)
     CTEST_ASSERT(new_node->link_count == node->link_count, "testing inode read and write");
     CTEST_ASSERT(new_node->block_ptr[0] == node->block_ptr[0], "testing inode read and write");
     CTEST_ASSERT(new_node->block_ptr[1] == node->block_ptr[1], "testing inode read and write");
+    free(new_node);
 }
 
 void test_inode_get_and_put(void) {
@@ -211,8 +209,7 @@ void test_inode_get_and_put(void) {
     node->ref_count = 1;
     iput(node);
 
-    struct inode *new_node = malloc(sizeof(struct inode));
-    new_node = iget(1);
+    struct inode *new_node = iget(1);
     CTEST_ASSERT(new_node->size == node->size, "testing inode put and get");
     CTEST_ASSERT(new_node->owner_id == node->owner_id, "testing inode put and get");
     CTEST_ASSERT(new_node->permissions == node->permissions, "testing inode put and get");
@@ -220,7 +217,7 @@ void test_inode_get_and_put(void) {
     CTEST_ASSERT(new_node->link_count == node->link_count, "testing inode put and get");
     CTEST_ASSERT(new_node->block_ptr[0] == node->block_ptr[0], "testing inode put and get");
     CTEST_ASSERT(new_node->block_ptr[1] == node->block_ptr[1], "testing inode put and get");
-    
+    free(node);
 }
 
 int main(void)

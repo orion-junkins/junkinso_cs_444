@@ -22,7 +22,7 @@ struct inode {
     unsigned int ref_count;  // in-core only
     unsigned int inode_num;
 };
-int ialloc(void);
+struct inode* ialloc(void);
 
 struct inode * find_incore_free(void);
 
