@@ -101,7 +101,7 @@ void test_alloc(void)
     {
         set_free(testing_block, i, 0);
     }
-    bwrite(1, testing_block);
+    bwrite(FREE_BLOCK_MAP_NUM, testing_block);
 
     int inode_0_num = alloc();
     CTEST_ASSERT(inode_0_num == 0, "testing ialloc");
