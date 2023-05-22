@@ -50,11 +50,14 @@ void test_bread_and_bwrite(void)
     free(block_b_to_write);
     free(block_a_to_read);
     free(block_b_to_read);
+
     image_close();
 }
 
 void test_set_and_find_free(void)
 {
+    image_open("image", 1);
+
     unsigned char *testing_block = malloc(BLOCK_SIZE);
     set_free(testing_block, 0, 1);
     set_free(testing_block, 1, 1);
@@ -62,27 +65,30 @@ void test_set_and_find_free(void)
     set_free(testing_block, 4, 1);
     set_free(testing_block, 5, 1);
 
-    CTEST_ASSERT(find_free(testing_block) == 3, "testing set_free and find_free");
+    CTEST_ASSERT(find_free(testing_block) == 3, "testing find_free finds first free block");
     set_free(testing_block, 3, 1);
     set_free(testing_block, 4, 0);
 
-    CTEST_ASSERT(find_free(testing_block) == 4, "testing set_free and find_free");
+    CTEST_ASSERT(find_free(testing_block) == 4, "testing find_free finds a block that has been previously allocated then freed");
     free(testing_block);
+
+    image_close();
 }
 
 void test_ialloc(void)
 {
     image_open("image", 1);
+
     struct inode* node_0 = ialloc();
-    CTEST_ASSERT(node_0->size == 0, "test ialloc");
-    CTEST_ASSERT(node_0->owner_id == 0, "test ialloc");
-    CTEST_ASSERT(node_0->permissions == 0, "test ialloc");
-    CTEST_ASSERT(node_0->flags == 0, "test ialloc");
+    CTEST_ASSERT(node_0->size == 0, "test ialloc defaults to size of 0");
+    CTEST_ASSERT(node_0->owner_id == 0, "test ialloc defaults to owner_id of 0");
+    CTEST_ASSERT(node_0->permissions == 0, "test ialloc defaults to permissions of 0");
+    CTEST_ASSERT(node_0->flags == 0, "test ialloc defaults to flags of 0");
 
     struct inode* node_1 = ialloc();
 
-    CTEST_ASSERT(node_1->inode_num != node_0->inode_num, "test ialloc");
-    
+    CTEST_ASSERT(node_1->inode_num != node_0->inode_num, "test subsequent calls to ialloc yield different inode numbers");
+
     image_close();
 }
 
@@ -103,6 +109,7 @@ void test_alloc(void)
     CTEST_ASSERT(inode_1_num == 1, "testing ialloc");
 
     free(testing_block);
+
     image_close();
 }
 
@@ -117,12 +124,12 @@ void test_mkfs(void)
         testing_block = bread(i, testing_block);
         if (i == FREE_BLOCK_MAP_NUM)
         {
-            // 0-6 7 should be set to 1 in the data block
-            CTEST_ASSERT(find_free(testing_block) == 7, "testing set_free and find_free");
+            // 7 should be free in the free block map
+            CTEST_ASSERT(find_free(testing_block) == 7, "testing Free Block Map has 7 free");
         }
         else
         {
-            CTEST_ASSERT(find_free(testing_block) == 0, "testing set_free and find_free");
+            CTEST_ASSERT(find_free(testing_block) == 0, "testing all other blocks are empty");
         }
     }
 
@@ -148,11 +155,13 @@ void test_mkfs(void)
     free(testing_block);
     free(expected_empty_block);
     free(current_block);
+
     image_close();
 }
 
 void test_incore_inodes(void)
 {
+    image_open("image", 1);
     // Find a free inode in the incore inode table
     struct inode * original_node = find_incore_free();
 
@@ -165,12 +174,15 @@ void test_incore_inodes(void)
     struct inode * new_node = find_incore(27);
     
     // Verify that the new node has the same data as the original node.
-    CTEST_ASSERT(new_node->inode_num == original_node->inode_num, "testing incore inodes");
-    CTEST_ASSERT(new_node->owner_id == original_node->owner_id, "testing incore inodes");
+    CTEST_ASSERT(new_node->inode_num == original_node->inode_num, "testing incore inode has expected inode number");
+    CTEST_ASSERT(new_node->owner_id == original_node->owner_id, "testing incore inodes have expected owner id");
+    image_close();
 }
 
 void test_inode_read_and_write(void)
 {
+    image_open("image", 1);
+
     struct inode *node = malloc(sizeof(struct inode));
     node->size = 1;
     node->owner_id = 1;
@@ -186,17 +198,21 @@ void test_inode_read_and_write(void)
     struct inode *new_node = malloc(sizeof(struct inode));
     read_inode(new_node, 1);
 
-    CTEST_ASSERT(new_node->size == node->size, "testing inode read and write");
-    CTEST_ASSERT(new_node->owner_id == node->owner_id, "testing inode read and write");
-    CTEST_ASSERT(new_node->permissions == node->permissions, "testing inode read and write");
-    CTEST_ASSERT(new_node->flags == node->flags, "testing inode read and write");
-    CTEST_ASSERT(new_node->link_count == node->link_count, "testing inode read and write");
-    CTEST_ASSERT(new_node->block_ptr[0] == node->block_ptr[0], "testing inode read and write");
-    CTEST_ASSERT(new_node->block_ptr[1] == node->block_ptr[1], "testing inode read and write");
+    CTEST_ASSERT(new_node->size == node->size, "testing inode reads right size from written inode");
+    CTEST_ASSERT(new_node->owner_id == node->owner_id, "testing inode reads right owner_id from written inode");
+    CTEST_ASSERT(new_node->permissions == node->permissions, "testing inode reads right permissions from written inode");
+    CTEST_ASSERT(new_node->flags == node->flags, "testing inode reads right flags from written inode");
+    CTEST_ASSERT(new_node->link_count == node->link_count, "testing inode reads right link_count from written inode");
+    CTEST_ASSERT(new_node->block_ptr[0] == node->block_ptr[0], "testing inode reads right block_ptr[0] from written inode");
+    CTEST_ASSERT(new_node->block_ptr[1] == node->block_ptr[1], "testing inode reads right block_ptr[1] from written inode");
     free(new_node);
+
+    image_close();
 }
 
 void test_inode_get_and_put(void) {
+    image_open("image", 1);
+
     struct inode *node = malloc(sizeof(struct inode));
     node->size = 1;
     node->owner_id = 1;
@@ -210,14 +226,16 @@ void test_inode_get_and_put(void) {
     iput(node);
 
     struct inode *new_node = iget(1);
-    CTEST_ASSERT(new_node->size == node->size, "testing inode put and get");
-    CTEST_ASSERT(new_node->owner_id == node->owner_id, "testing inode put and get");
-    CTEST_ASSERT(new_node->permissions == node->permissions, "testing inode put and get");
-    CTEST_ASSERT(new_node->flags == node->flags, "testing inode put and get");
-    CTEST_ASSERT(new_node->link_count == node->link_count, "testing inode put and get");
-    CTEST_ASSERT(new_node->block_ptr[0] == node->block_ptr[0], "testing inode put and get");
-    CTEST_ASSERT(new_node->block_ptr[1] == node->block_ptr[1], "testing inode put and get");
+    CTEST_ASSERT(new_node->size == node->size, "testing inode get recieves correct size from inode put");
+    CTEST_ASSERT(new_node->owner_id == node->owner_id, "testing inode get recieves correct owner_id from inode put");
+    CTEST_ASSERT(new_node->permissions == node->permissions, "testing inode get recieves correct permissions from inode put");
+    CTEST_ASSERT(new_node->flags == node->flags, "testing inode get recieves correct flags from inode put");
+    CTEST_ASSERT(new_node->link_count == node->link_count, "testing inode get recieves correct link_count from inode put");
+    CTEST_ASSERT(new_node->block_ptr[0] == node->block_ptr[0], "testing inode get recieves correct block_ptr[0] from inode put");
+    CTEST_ASSERT(new_node->block_ptr[1] == node->block_ptr[1], "testing inode get recieves correct block_ptr[1] from inode put");
     free(node);
+
+    image_close();
 }
 
 int main(void)
