@@ -125,11 +125,13 @@ void test_mkfs(void)
         if (i == FREE_BLOCK_MAP_NUM)
         {
             // 7 should be free in the free block map
-            CTEST_ASSERT(find_free(testing_block) == 7, "testing Free Block Map has 7 free");
+            CTEST_ASSERT(find_free(testing_block) == 8, "testing 8 is the first free index in the Free Block Map");
+        } else if (i == FREE_INODE_MAP_NUM){
+            CTEST_ASSERT(find_free(testing_block) == 1, "testing 1 is the first free index in the Free Inode Map (root allocated)");
         }
         else
         {
-            CTEST_ASSERT(find_free(testing_block) == 0, "testing all other blocks are empty");
+            CTEST_ASSERT(find_free(testing_block) == 0, "testing all other blocks are empty"); // fail
         }
     }
 
@@ -141,7 +143,7 @@ void test_mkfs(void)
 
     unsigned char *current_block = malloc(BLOCK_SIZE);
     int all_match = 1;
-    for (int i = 3; i < 5024; i++)
+    for (int i = 4; i < 7; i++)
     {
         current_block = bread(i, current_block);
         if (memcmp(expected_empty_block, current_block, BLOCK_SIZE) != 0)
@@ -150,7 +152,18 @@ void test_mkfs(void)
         }
     }
 
-    CTEST_ASSERT(all_match == 1, "testing all blocks are inode and file data empty");
+    for (int i = 8; i < 5024; i++)
+    {
+        current_block = bread(i, current_block);
+        if (memcmp(expected_empty_block, current_block, BLOCK_SIZE) != 0)
+        {
+            all_match = 0;
+        }
+    }
+
+
+
+    CTEST_ASSERT(all_match == 1, "testing all blocks except inode data block 0 (block 3) and file data block 0 (block 7) are empty");
 
     free(testing_block);
     free(expected_empty_block);
