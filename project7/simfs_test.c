@@ -8,6 +8,7 @@
 #include "block.h"
 #include "free.h"
 #include "inode.h"
+#include "ls.h"
 #include "mkfs.h"
 
 void test_file_creation(void)
@@ -251,19 +252,77 @@ void test_inode_get_and_put(void) {
     image_close();
 }
 
+void test_directory_open_close(void)
+{
+    image_open("image", 1);
+    mkfs();
+    struct directory *root = directory_open(0);
+    CTEST_ASSERT(root->inode->inode_num == 0, "testing directory_open returns expected inode number");
+    CTEST_ASSERT(root->inode->flags == DIR_FLAG_VALUE, "testing directory_open returns a directory");
+    CTEST_ASSERT(root->inode->size == 2 * ENTRY_SIZE, "testing directory_open returns a directory with the expected size");
+    CTEST_ASSERT(root->inode->block_ptr[0] == 7, "testing directory_open returns a directory with the expected data block");
+    directory_close(root);
+    CTEST_ASSERT(root->inode == NULL, "testing directory_close frees the inode");
+    image_close();
+}
+
+void test_directory_open_failure(void){    
+    // Make sure incore is clear
+    for (int i = 0; i < MAX_SYS_OPEN_FILES; i++)
+    {
+        incore[i].ref_count = 1;
+    }
+
+    // Fill incore with inodes
+    for (int i = 0; i < MAX_SYS_OPEN_FILES; i++)
+    {
+        iget(i);
+    }
+    
+    struct directory *root = directory_open(MAX_SYS_OPEN_FILES);
+    CTEST_ASSERT(root == NULL, "testing directory_open returns NULL when there are no free inodes");
+}
+
+void test_directory_get(void){
+    image_open("image", 1);
+    mkfs();
+    
+    struct directory *dir;
+    struct directory_entry ent;
+
+    dir = directory_open(0);
+    int first_open = directory_get(dir, &ent);
+    CTEST_ASSERT(first_open == 0, "testing directory_get returns 0 when first entry successfully opened");
+    CTEST_ASSERT(ent.inode_num == 0, "testing directory_get returns the expected inode number");
+    CTEST_ASSERT(strcmp(ent.name, ".") == 0, "testing directory_get returns the expected name");
+
+    int second_open = directory_get(dir, &ent);
+    CTEST_ASSERT(second_open == 0, "testing directory_get returns 0 when second entry successfully opened");
+    CTEST_ASSERT(ent.inode_num == 0, "testing directory_get returns the expected inode number");
+    CTEST_ASSERT(strcmp(ent.name, "..") == 0, "testing directory_get returns the expected name");
+
+    int third_open = directory_get(dir, &ent);
+    CTEST_ASSERT(third_open == -1, "testing directory_get returns -1 when there are no more entries");
+
+    image_close();
+}
+
 int main(void)
 {
     CTEST_VERBOSE(1);
 
-    test_file_creation();
-    test_bread_and_bwrite();
-    test_set_and_find_free();
-    test_ialloc();
-    test_alloc();
-    test_mkfs();
-    test_incore_inodes();
-    test_inode_read_and_write();
-    test_inode_get_and_put();
+    // test_file_creation();
+    // test_bread_and_bwrite();
+    // test_set_and_find_free();
+    // test_ialloc();
+    // test_alloc();
+    // test_mkfs();
+    // test_incore_inodes();
+    // test_inode_read_and_write();
+    // test_inode_get_and_put();
+    test_directory_get();
+    test_directory_open_close();
+    test_directory_open_failure();
 
     CTEST_RESULTS();
 

@@ -5,7 +5,6 @@
 #include "free.h"
 #include "block.h"
 #include "pack.h"
-static struct inode incore[MAX_SYS_OPEN_FILES] = {0};
 
 struct inode* ialloc(void)
 {
