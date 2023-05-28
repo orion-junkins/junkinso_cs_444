@@ -311,18 +311,18 @@ int main(void)
 {
     CTEST_VERBOSE(1);
 
-    // test_file_creation();
-    // test_bread_and_bwrite();
-    // test_set_and_find_free();
-    // test_ialloc();
-    // test_alloc();
-    // test_mkfs();
-    // test_incore_inodes();
-    // test_inode_read_and_write();
-    // test_inode_get_and_put();
-    test_directory_get();
+    test_file_creation();
+    test_bread_and_bwrite();
+    test_set_and_find_free();
+    test_ialloc();
+    test_alloc();
+    test_mkfs();
+    test_incore_inodes();
+    test_inode_read_and_write();
+    test_inode_get_and_put();
     test_directory_open_close();
     test_directory_open_failure();
+    test_directory_get();
 
     CTEST_RESULTS();
 
