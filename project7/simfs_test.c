@@ -284,6 +284,7 @@ void test_directory_open_failure(void){
 }
 
 void test_directory_get(void){
+    // Mirrors the behavior of ls() to verify that all directory functions are working together as expected
     image_open("image", 1);
     mkfs();
     
