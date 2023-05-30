@@ -109,3 +109,108 @@ void directory_close(struct directory *d)
     iput(d->inode);
     free(d);
 }
+
+char *get_dirname(const char *path, char *dirname)
+{
+    strcpy(dirname, path);
+
+    char *p = strrchr(dirname, '/');
+
+    if (p == NULL) {
+        strcpy(dirname, ".");
+        return dirname;
+    }
+
+    if (p == dirname)  // Last slash is the root /
+        *(p+1) = '\0';
+
+    else
+        *p = '\0';  // Last slash is not the root /
+
+    return dirname;
+}
+
+char *get_basename(const char *path, char *basename)
+{
+    if (strcmp(path, "/") == 0) {
+        strcpy(basename, path);
+        return basename;
+    }
+
+    const char *p = strrchr(path, '/');
+
+    if (p == NULL)
+        p = path;   // No slash in name, start at beginning
+    else
+        p++;        // Start just after slash
+
+    strcpy(basename, p);
+
+    return basename;
+}
+
+
+int directory_make(char *path) {
+    /*
+    Create a directory at the given path. Return 0 on success, -1 on failure.
+    */
+    // Find the directory path that will contain the new directory
+    char dirname[strlen(path)];
+    get_dirname(path, dirname);
+
+    // Find the new directory name from the path
+    char basename[strlen(path)];
+    get_basename(path, basename);
+
+    // Find the inode for the parent directory
+    struct inode *parent = namei(dirname);
+
+    // Create a new inode for the new directory
+    struct inode *new_dir = ialloc();
+
+    // Create a new data block for the new directory entries
+    int new_dir_data_block = alloc();
+
+
+    // Initialize the new directory in-core inode
+    new_dir->flags = DIR_FLAG_VALUE;
+    new_dir->size = 2 * ENTRY_SIZE; // 2 entries
+    new_dir->block_ptr[0] = new_dir_data_block;
+
+    // Create a new block-sized array for the new directory data block and initialize it with the . and .. entries
+    unsigned char new_dir_block[BLOCK_SIZE];
+    write_u16((char *)new_dir_block, new_dir->inode_num);
+    strcpy((char *)(new_dir_block + INODE_NUMBER_SIZE), ".");
+
+    write_u16((char *)(new_dir_block + ENTRY_SIZE), new_dir->inode_num);
+    strcpy((char *)(new_dir_block + ENTRY_SIZE + INODE_NUMBER_SIZE), "..");
+
+    // Write the new directory data new_dir_block to disk (bwrite()).
+    bwrite(new_dir_data_block, new_dir_block);
+
+    // Find the block that will contain the new directory entry
+    int parent_block_num = parent->size / BLOCK_SIZE;
+
+    // Read that block into memory
+    unsigned char root_block[BLOCK_SIZE];
+    bread(parent->block_ptr[parent_block_num], root_block);
+
+    // Add the new directory entry to it.
+    int offset_in_block = parent->size % BLOCK_SIZE;
+    write_u16((char *)(root_block + offset_in_block), new_dir->inode_num);
+    strcpy((char *)(root_block + offset_in_block + INODE_NUMBER_SIZE), basename);
+
+    // Write that block to disk
+    bwrite(parent->block_ptr[parent_block_num], root_block);
+
+    // Update the parent directory's size field 
+    parent->size = parent->size + ENTRY_SIZE;
+
+    // Release the new directory's in-core inode
+    iput(new_dir);
+
+    // Release the parent directory's in-core inode
+    iput(parent);
+
+    return 0;
+}

@@ -291,6 +291,45 @@ void test_directory_get(void){
     struct directory *dir;
     struct directory_entry ent;
 
+    int make_dir_0 = directory_make("/new_dir_0");
+    CTEST_ASSERT(make_dir_0 == 0, "testing directory_make returns 0 when directory is successfully created");
+
+    int make_dir_1 = directory_make("/new_dir_1");
+    CTEST_ASSERT(make_dir_1 == 0, "testing directory_make returns 0 when directory is successfully created");
+
+    dir = directory_open(0);
+    int first_open = directory_get(dir, &ent);
+    CTEST_ASSERT(first_open == 0, "testing directory_get returns 0 when first entry successfully opened");
+    CTEST_ASSERT(ent.inode_num == 0, "testing directory_get returns the expected inode number");
+    CTEST_ASSERT(strcmp(ent.name, ".") == 0, "testing directory_get returns the expected name");
+
+    int second_open = directory_get(dir, &ent);
+    CTEST_ASSERT(second_open == 0, "testing directory_get returns 0 when second entry successfully opened");
+    CTEST_ASSERT(ent.inode_num == 0, "testing directory_get returns the expected inode number");
+    CTEST_ASSERT(strcmp(ent.name, "..") == 0, "testing directory_get returns the expected name");
+
+    int third_open = directory_get(dir, &ent);
+    CTEST_ASSERT(third_open == 0, "testing directory_get returns 0 when third entry successfully opened");
+    CTEST_ASSERT(strcmp(ent.name, "new_dir_0") == 0, "testing directory_get returns the expected name");
+
+    int fourth_open = directory_get(dir, &ent);
+    CTEST_ASSERT(fourth_open == 0, "testing directory_get returns 0 when fourth entry successfully opened");
+    CTEST_ASSERT(strcmp(ent.name, "new_dir_1") == 0, "testing directory_get returns the expected name");
+
+    int final_open = directory_get(dir, &ent);
+    CTEST_ASSERT(final_open == -1, "testing directory_get returns -1 when there are no more entries");
+
+    image_close();
+}
+
+void test_directory_make(void){
+    // Mirrors the behavior of ls() to verify that all directory functions are working together as expected
+    image_open("image", 1);
+    mkfs();
+    
+    struct directory *dir;
+    struct directory_entry ent;
+
     dir = directory_open(0);
     int first_open = directory_get(dir, &ent);
     CTEST_ASSERT(first_open == 0, "testing directory_get returns 0 when first entry successfully opened");
@@ -324,6 +363,7 @@ int main(void)
     test_directory_open_close();
     test_directory_open_failure();
     test_directory_get();
+    test_directory_make();
 
     CTEST_RESULTS();
 
