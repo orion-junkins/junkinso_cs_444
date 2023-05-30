@@ -8,7 +8,7 @@
 #define BLOCK_SIZE 4096
 #define INODE_SIZE 64
 #define INODE_FIRST_BLOCK 3
-
+#define ROOT_INODE_NUM 0
 #define INODES_PER_BLOCK (BLOCK_SIZE / INODE_SIZE)
 
 struct inode {
@@ -35,5 +35,6 @@ void read_inode(struct inode *in, int inode_num);
 void write_inode(struct inode *in);
 struct inode *iget(int inode_num);
 void iput(struct inode *in);
+struct inode *namei(char *path);
 
 #endif

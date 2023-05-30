@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "inode.h"
@@ -159,4 +160,12 @@ void iput(struct inode *in) {
    if (in->ref_count == 0){
        write_inode(in);
    }
+}
+
+struct inode *namei(char *path){
+    /*
+    Returns an in-core inode with a non-zero ref_count.
+    NOTE: This current just returns the in-core inode for the root directory, /
+    */
+    return iget(ROOT_INODE_NUM);
 }
