@@ -154,7 +154,7 @@ int directory_make(char *path) {
     /*
     Create a directory at the given path. Return 0 on success, -1 on failure.
     */
-    // Find the directory path that will contain the new directory
+    // Find the diretory path that will contain the new directory
     char dirname[strlen(path)];
     get_dirname(path, dirname);
 
@@ -164,13 +164,24 @@ int directory_make(char *path) {
 
     // Find the inode for the parent directory
     struct inode *parent = namei(dirname);
+    if (parent == NULL)
+    {
+        return -1;
+    }
 
     // Create a new inode for the new directory
     struct inode *new_dir = ialloc();
+    if (new_dir == NULL)
+    {
+        return -1;
+    }
 
     // Create a new data block for the new directory entries
     int new_dir_data_block = alloc();
-
+    if (new_dir_data_block == -1)
+    {
+        return -1;
+    }
 
     // Initialize the new directory in-core inode
     new_dir->flags = DIR_FLAG_VALUE;
@@ -182,7 +193,7 @@ int directory_make(char *path) {
     write_u16((char *)new_dir_block, new_dir->inode_num);
     strcpy((char *)(new_dir_block + INODE_NUMBER_SIZE), ".");
 
-    write_u16((char *)(new_dir_block + ENTRY_SIZE), new_dir->inode_num);
+    write_u16((char *)(new_dir_block + ENTRY_SIZE), parent->inode_num);
     strcpy((char *)(new_dir_block + ENTRY_SIZE + INODE_NUMBER_SIZE), "..");
 
     // Write the new directory data new_dir_block to disk (bwrite()).

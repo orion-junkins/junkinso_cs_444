@@ -11,6 +11,11 @@
 #include "ls.h"
 #include "mkfs.h"
 
+void clear_incore_inodes(void)
+{
+    memset(incore, 0, sizeof incore);
+}
+
 void test_file_creation(void)
 {
     image_open("image", 1);
@@ -80,13 +85,13 @@ void test_ialloc(void)
 {
     image_open("image", 1);
 
-    struct inode* node_0 = ialloc();
+    struct inode *node_0 = ialloc();
     CTEST_ASSERT(node_0->size == 0, "test ialloc defaults to size of 0");
     CTEST_ASSERT(node_0->owner_id == 0, "test ialloc defaults to owner_id of 0");
     CTEST_ASSERT(node_0->permissions == 0, "test ialloc defaults to permissions of 0");
     CTEST_ASSERT(node_0->flags == 0, "test ialloc defaults to flags of 0");
 
-    struct inode* node_1 = ialloc();
+    struct inode *node_1 = ialloc();
 
     CTEST_ASSERT(node_1->inode_num != node_0->inode_num, "test subsequent calls to ialloc yield different inode numbers");
 
@@ -127,7 +132,9 @@ void test_mkfs(void)
         {
             // 7 should be free in the free block map
             CTEST_ASSERT(find_free(testing_block) == 8, "testing 8 is the first free index in the Free Block Map");
-        } else if (i == FREE_INODE_MAP_NUM){
+        }
+        else if (i == FREE_INODE_MAP_NUM)
+        {
             CTEST_ASSERT(find_free(testing_block) == 1, "testing 1 is the first free index in the Free Inode Map (root allocated)");
         }
         else
@@ -162,8 +169,6 @@ void test_mkfs(void)
         }
     }
 
-
-
     CTEST_ASSERT(all_match == 1, "testing all blocks except inode data block 0 (block 3) and file data block 0 (block 7) are empty");
 
     free(testing_block);
@@ -177,7 +182,7 @@ void test_incore_inodes(void)
 {
     image_open("image", 1);
     // Find a free inode in the incore inode table
-    struct inode * original_node = find_incore_free();
+    struct inode *original_node = find_incore_free();
 
     // Modify it to set some values
     original_node->inode_num = 27;
@@ -185,8 +190,8 @@ void test_incore_inodes(void)
     original_node->owner_id = 1;
 
     // Search for that by number
-    struct inode * new_node = find_incore(27);
-    
+    struct inode *new_node = find_incore(27);
+
     // Verify that the new node has the same data as the original node.
     CTEST_ASSERT(new_node->inode_num == original_node->inode_num, "testing incore inode has expected inode number");
     CTEST_ASSERT(new_node->owner_id == original_node->owner_id, "testing incore inodes have expected owner id");
@@ -204,8 +209,8 @@ void test_inode_read_and_write(void)
     node->flags = 1;
     node->link_count = 1;
     node->block_ptr[0] = 1;
-    node->block_ptr[1] = 1;   
-    node->inode_num = 1; 
+    node->block_ptr[1] = 1;
+    node->inode_num = 1;
     write_inode(node);
     free(node);
 
@@ -224,7 +229,8 @@ void test_inode_read_and_write(void)
     image_close();
 }
 
-void test_inode_get_and_put(void) {
+void test_inode_get_and_put(void)
+{
     image_open("image", 1);
 
     struct inode *node = malloc(sizeof(struct inode));
@@ -234,8 +240,8 @@ void test_inode_get_and_put(void) {
     node->flags = 1;
     node->link_count = 1;
     node->block_ptr[0] = 1;
-    node->block_ptr[1] = 1;   
-    node->inode_num = 1; 
+    node->block_ptr[1] = 1;
+    node->inode_num = 1;
     node->ref_count = 1;
     iput(node);
 
@@ -266,28 +272,53 @@ void test_directory_open_close(void)
     image_close();
 }
 
-void test_directory_open_failure(void){    
+void test_directory_open_failure(void)
+{
     // Make sure incore is clear
-    for (int i = 0; i < MAX_SYS_OPEN_FILES; i++)
-    {
-        incore[i].ref_count = 1;
-    }
+    clear_incore_inodes();
 
     // Fill incore with inodes
     for (int i = 0; i < MAX_SYS_OPEN_FILES; i++)
     {
         iget(i);
     }
-    
+
     struct directory *root = directory_open(MAX_SYS_OPEN_FILES);
     CTEST_ASSERT(root == NULL, "testing directory_open returns NULL when there are no free inodes");
 }
 
-void test_directory_get(void){
+void test_directory_get(void)
+{
     // Mirrors the behavior of ls() to verify that all directory functions are working together as expected
     image_open("image", 1);
     mkfs();
-    
+
+    struct directory *dir;
+    struct directory_entry ent;
+
+    dir = directory_open(0);
+    int first_open = directory_get(dir, &ent);
+    CTEST_ASSERT(first_open == 0, "testing directory_get returns 0 when first entry successfully opened");
+    CTEST_ASSERT(ent.inode_num == 0, "testing directory_get returns the expected inode number");
+    CTEST_ASSERT(strcmp(ent.name, ".") == 0, "testing directory_get returns the expected name");
+
+    int second_open = directory_get(dir, &ent);
+    CTEST_ASSERT(second_open == 0, "testing directory_get returns 0 when second entry successfully opened");
+    CTEST_ASSERT(ent.inode_num == 0, "testing directory_get returns the expected inode number");
+    CTEST_ASSERT(strcmp(ent.name, "..") == 0, "testing directory_get returns the expected name");
+
+    int third_open = directory_get(dir, &ent);
+    CTEST_ASSERT(third_open == -1, "testing directory_get returns -1 when there are no more entries");
+
+    image_close();
+}
+
+void test_directory_make(void)
+{
+    // Mirrors the behavior of ls() to verify that all directory functions are working together as expected
+    image_open("image", 1);
+    mkfs();
+
     struct directory *dir;
     struct directory_entry ent;
 
@@ -322,35 +353,59 @@ void test_directory_get(void){
     image_close();
 }
 
-void test_directory_make(void){
-    // Mirrors the behavior of ls() to verify that all directory functions are working together as expected
+void test_directory_make_fails_inodes_full(void)
+{
     image_open("image", 1);
     mkfs();
-    
-    struct directory *dir;
-    struct directory_entry ent;
 
-    dir = directory_open(0);
-    int first_open = directory_get(dir, &ent);
-    CTEST_ASSERT(first_open == 0, "testing directory_get returns 0 when first entry successfully opened");
-    CTEST_ASSERT(ent.inode_num == 0, "testing directory_get returns the expected inode number");
-    CTEST_ASSERT(strcmp(ent.name, ".") == 0, "testing directory_get returns the expected name");
+    unsigned char inode_map[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE * 8; i++)
+    {
+        set_free(inode_map, i, 1);
+    }
+    bwrite(FREE_INODE_MAP_NUM, inode_map);
 
-    int second_open = directory_get(dir, &ent);
-    CTEST_ASSERT(second_open == 0, "testing directory_get returns 0 when second entry successfully opened");
-    CTEST_ASSERT(ent.inode_num == 0, "testing directory_get returns the expected inode number");
-    CTEST_ASSERT(strcmp(ent.name, "..") == 0, "testing directory_get returns the expected name");
+    int make_dir_0 = directory_make("/new_dir_0");
 
-    int third_open = directory_get(dir, &ent);
-    CTEST_ASSERT(third_open == -1, "testing directory_get returns -1 when there are no more entries");
+    CTEST_ASSERT(make_dir_0 == -1, "testing directory_make returns -1 when there are no free inodes");
 
     image_close();
+}
+
+void test_directory_make_fails_data_blocks_full(void)
+{
+    image_open("image", 1);
+    mkfs();
+
+    unsigned char data_block_map[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE * 8; i++)
+    {
+        set_free(data_block_map, i, 1);
+    }
+    bwrite(FREE_BLOCK_MAP_NUM, data_block_map);
+
+    int make_dir_0 = directory_make("/new_dir_0");
+
+    CTEST_ASSERT(make_dir_0 == -1, "testing directory_make returns -1 when there are no free data blocks");
+
+    image_close();
+}
+
+void test_find_free_failure(void)
+{
+    unsigned char testing_block[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE * 8; i++)
+    {
+        set_free(testing_block, i, 1);
+    }
+
+    int free_inode = find_free(testing_block);
+    CTEST_ASSERT(free_inode == -1, "testing find_free returns -1 when there is nothing free in the block");
 }
 
 int main(void)
 {
     CTEST_VERBOSE(1);
-
     test_file_creation();
     test_bread_and_bwrite();
     test_set_and_find_free();
@@ -364,7 +419,9 @@ int main(void)
     test_directory_open_failure();
     test_directory_get();
     test_directory_make();
-
+    test_directory_make_fails_inodes_full();
+    test_directory_make_fails_data_blocks_full();
+    test_find_free_failure();
     CTEST_RESULTS();
 
     CTEST_EXIT();
